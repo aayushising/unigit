@@ -1,57 +1,90 @@
 #include <iostream>
+#include <fstream>
 #include <string>
-#include <vector>
+#include <cstdlib>
+
 using namespace std;
+
+
+
 class RepoManager {
 public:
     void init() {
-        cout << "Repository initialized.\n";
+        cout << "[unigit] Repository initialized in .unigit/\n";
+        system("mkdir -p .unigit/refs");
+        ofstream head(".unigit/refs/HEAD");
+        head << "";
+        head.close();
     }
 
-    void createCommit(const std::string& parent_hash, const std::string& message) {
-        cout << "Commit created with message: " << message << "\n";
-        cout << "Parent: " << parent_hash << "\n";
+    void createCommit(const string& parent_hash, const string& message) {
+        string new_commit_hash = "commit_" + to_string(rand());
+
+        ofstream commitFile(".unigit/commits/" + new_commit_hash);
+        commitFile << "Parent: " << parent_hash << "\n";
+        commitFile << "Message: " << message << "\n";
+        commitFile.close();
+
+        ofstream head(".unigit/refs/HEAD");
+        head << new_commit_hash;
+        head.close();
+
+        cout << "[unigit] Commit created:\n";
+        cout << "Hash: " << new_commit_hash << "\n";
+        cout << "Message: " << message << "\n";
     }
 
     void printLog() {
-        cout << "Commit log:\n";
-        cout << "commit abc123\nAuthor: You\nMessage: Initial commit\n\n";
-        cout << "commit def456\nAuthor: You\nMessage: Added status command\n\n";
+        cout << "[unigit] Commit log:\n";
+        cout << "commit 123abc\nMessage: Initial commit\n";
+        cout << "commit 456def\nMessage: Added retrieve command\n";
     }
 
     void showInfo() {
-        cout << "Repository Info:\n";
+        cout << "[unigit] Repository Info:\n";
         cout << "- Current Branch: main\n";
-        cout << "- Total Commits: 2\n";
+        cout << "- Total Commits: 2 (stubbed)\n";
+        cout << "- User: local\n";
     }
 
-    void retrieveFile(const std::string& file_path) {
-        cout << "Retrieved version of: " << file_path << "\n";
-        cout << "Mock file content here...\n";
+    void retrieveFile(const string& file_path) {
+        cout << "[unigit] Retrieving file: " << file_path << "\n";
+        cout << "Mock content: <file contents here>\n";
     }
 };
 
 class IndexManager {
 public:
     void printStatus() {
-        cout << "Displaying current index status...\n";
+        cout << "[unigit] Checking for modified/tracked files...\n";
     }
 
     string getLastCommitHash() {
-        return "dummy_parent_hash";
+        ifstream head(".unigit/refs/HEAD");
+        if (!head.is_open()) {
+            cerr << "[unigit] Error: Could not read HEAD file.\n";
+            return "";
+        }
+
+        string last_commit;
+        getline(head, last_commit);
+        head.close();
+        return last_commit;
     }
 };
+
 RepoManager repoManager;
 IndexManager indexManager;
 
 void printHelp() {
-    cout << "  unigit init                      - Initialize repository\n";
-    cout << "  unigit status                    - Show current changes\n";
-    cout << "  unigit commit -m \"message\"       - Commit staged changes\n";
-    cout << "  unigit log                       - Show commit history\n";
-    cout << "  unigit retrieve <file>          - Retrieve last committed version of a file\n";
-    cout << "  unigit info                      - Show repository info\n";
-    cout << "  unigit help                      - Show this help menu\n";
+    cout << "  Unigit Commands:\n";
+    cout << "  unigit init                   → Initialize repository\n";
+    cout << "  unigit status                 → Show current status\n";
+    cout << "  unigit commit -m \"msg\"        → Commit changes\n";
+    cout << "  unigit log                    → Show commit history\n";
+    cout << "  unigit retrieve <file>       → Retrieve committed file\n";
+    cout << "  unigit info                   → Show repository details\n";
+    cout << "  unigit help                   → Show help menu\n";
 }
 
 int main(int argc, char** argv) {
@@ -69,7 +102,7 @@ int main(int argc, char** argv) {
         indexManager.printStatus();
     }
     else if (cmd == "commit") {
-        if (argc < 4 || std::string(argv[2]) != "-m") {
+        if (argc < 4 || string(argv[2]) != "-m") {
             cerr << "Usage: unigit commit -m \"commit message\"\n";
             return 1;
         }
@@ -82,7 +115,7 @@ int main(int argc, char** argv) {
     }
     else if (cmd == "retrieve") {
         if (argc < 3) {
-            std::cerr << "Usage: unigit retrieve <file>\n";
+            cerr << "Usage: unigit retrieve <file>\n";
             return 1;
         }
         string file_path = argv[2];
@@ -101,3 +134,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
